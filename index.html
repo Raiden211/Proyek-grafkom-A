@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Camera and Cube</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: white;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // Set up the scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create a cube with a green material
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        // Position the cube and camera
+        cube.position.set(0, 0, -5);
+        camera.position.z = 5;
+
+        // Character movement
+        const moveDistance = 0.1;
+        const jumpDistance = 0.5; // Distance to jump
+        const gravity = 0.02; // Gravity acceleration
+        let isJumping = false; // Flag to track if the character is jumping
+
+        const loader = new THREE.GLTFLoader();
+        loader.load('street_light/scene.gltf', function(gltf) {
+            scene.add(gltf.scene);
+            camera.position.z = 5;
+            
+            // Render the scene
+            renderer.render(scene, camera);
+
+            // Convert to JSON
+            const json = gltf.scene.toJSON();
+            console.log(json);
+
+            // Display JSON on screen
+            const jsonElement = document.createElement('pre');
+            jsonElement.textContent = JSON.stringify(json, null, 2);
+            document.body.appendChild(jsonElement);
+        });
+
+        function moveCharacter(key) {
+            switch (key) {
+                case 'W':
+                    camera.position.z -= moveDistance;
+                    break;
+                case 'A':
+                    camera.position.x -= moveDistance;
+                    break;
+                case 'S':
+                    camera.position.z += moveDistance;
+                    break;
+                case 'D':
+                    camera.position.x += moveDistance;
+                    break;
+                case ' ': // Space key
+                    if (!isJumping) { // Only allow jumping if not already jumping
+                        isJumping = true;
+                        jump();
+                    }
+                    break;
+            }
+
+            // Calculate distance between camera and cube
+            const distance = camera.position.distanceTo(cube.position);
+
+            // Scale cube based on distance
+            const scaleFactor = 2; // Scale factor for the cube
+            const newScale = 1 + (scaleFactor - 1) * (1 - Math.min(distance / 10, 1)); // Scale between 1 and scaleFactor based on distance
+            cube.scale.set(newScale, newScale, newScale);
+        }
+
+        // Jump function
+        function jump() {
+            let jumpHeight = camera.position.y + jumpDistance;
+            const jumpInterval = setInterval(() => {
+                camera.position.y += 0.1; // Increment Y position for the jump
+                if (camera.position.y >= jumpHeight) { // Check if reached the jump height
+                    clearInterval(jumpInterval); // Stop the jump interval
+                    fall(); // Start falling back down
+                }
+            }, 20);
+        }
+
+        // Fall function
+        function fall() {
+            const fallInterval = setInterval(() => {
+                camera.position.y -= gravity; // Apply gravity
+                if (camera.position.y <= 0) { // Check if reached the ground
+                    camera.position.y = 0; // Set position to ground level
+                    clearInterval(fallInterval); // Stop the fall interval
+                    isJumping = false; // Reset jumping flag
+                }
+            }, 20);
+        }
+
+        // Event listener for keypress
+        document.addEventListener('keydown', (event) => {
+            const key = event.key.toUpperCase();
+            if (['W', 'A', 'S', 'D', ' '].includes(key)) {
+                moveCharacter(key);
+            }
+        });
+
+        // Render the scene
+        function render() {
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+        render(); // Start rendering
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
