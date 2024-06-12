@@ -54,25 +54,18 @@
       const models = [];
 
       loader.load("kotak_listrik/scene.gltf", function (gltf) {
-            kotakListrik = gltf.scene;
-            kotakListrik.position.set(-6, 0, -5);
-            
-            // Rotate the model 90 degrees on the Y-axis
-            kotakListrik.rotation.y = Math.PI / 2; // Rotate 90 degrees
-            
-            scene.add(kotakListrik);
+        const model = gltf.scene;
+        model.position.set(-6, 0, -5);
 
-            // Compute the bounding box for the model
-            kotakListrik.userData.boundingBox = new THREE.Box3().setFromObject(kotakListrik);
-            models.push(kotakListrik);
+        // Rotate the model 90 degrees on the Y-axis
+        model.rotation.y = Math.PI / 2; // Rotate 90 degrees
 
-            // Add event listener for click event on kotak_listrik
-            kotakListrik.traverse(function (child) {
-                if (child.isMesh) {
-                    child.userData.clickable = true;
-                }
-            });
-        });
+        scene.add(model);
+
+        // Compute the bounding box for the model
+        model.userData.boundingBox = new THREE.Box3().setFromObject(model);
+        models.push(model);
+      });
 
       loader.load("apartment1/scene.gltf", function (gltf) {
         const newModel = gltf.scene;
@@ -106,6 +99,7 @@
       });
 
       // Load and place street light models
+      // Load and place street light models
       const streetLightLoader = new THREE.GLTFLoader();
       const streetLightScale = 0.01; // Scale down the street light to be 10x smaller
       const streetLightPositions = [
@@ -136,16 +130,9 @@
               light.rotation.y = Math.PI / 2; // 90 degrees rotation
             } else if (index >= 7) {
               light.rotation.y = Math.PI / 2; // 90 degrees rotation
-            }else if (index >= 4){
-              light.rotation.y = Math.PI
+            } else if (index >= 4) {
+              light.rotation.y = Math.PI;
             }
-
-            const spotlight = new THREE.SpotLight(0xffffff, 1, 10, Math.PI / 6, 0.5, 2);
-            spotlight.position.set(0, 10, 0);
-            spotlight.target.position.set(0, 0, 0);
-            spotlight.visible = false; // Initially invisible
-            light.add(spotlight);
-            light.add(spotlight.target);
 
             scene.add(light);
 
@@ -154,7 +141,26 @@
               new THREE.Vector3(pos[0], pos[1] + 0.1, pos[2]), // Center at the base
               new THREE.Vector3(0.2, 0.5, 0.2) // Size of the base box
             );
-            streetLights.push({ object: light, spotlight, boundingBox: baseBox });
+            streetLights.push({ object: light, boundingBox: baseBox });
+
+            // Add a directional light above the street light directed to ground
+            const streetLightDirectionalLight = new THREE.DirectionalLight(
+              0xffffff,
+              1
+            );
+            streetLightDirectionalLight.position.set(
+              pos[0],
+              pos[1] - 0.1,
+              pos[2]
+            );
+            scene.add(streetLightDirectionalLight);
+
+            // Calculate a point on the ground below the streetlight
+            const groundPoint = new THREE.Vector3(pos[0], 0, pos[2]);
+
+            // Set the target of the directional light to the ground point
+            streetLightDirectionalLight.target.position.copy(groundPoint);
+            scene.add(streetLightDirectionalLight.target);
 
             console.log("Street light added at position:", pos); // Debug statement
           },
@@ -200,7 +206,7 @@
       // Create the partition in the middle of the main road
       const partitionGeometry = new THREE.PlaneGeometry(0.2, 1000);
       const partitionMaterial = new THREE.MeshLambertMaterial({
-        color: 0xFFFFFF, // White color for partition
+        color: 0xffffff, // White color for partition
         side: THREE.DoubleSide,
       });
       const partition = new THREE.Mesh(partitionGeometry, partitionMaterial);
@@ -211,7 +217,10 @@
 
       // Create the partition for the road behind the box
       const partitionBehindBoxGeometry = new THREE.PlaneGeometry(50, 0.2);
-      const partitionBehindBox = new THREE.Mesh(partitionBehindBoxGeometry, partitionMaterial);
+      const partitionBehindBox = new THREE.Mesh(
+        partitionBehindBoxGeometry,
+        partitionMaterial
+      );
       partitionBehindBox.rotation.x = -Math.PI / 2; // Rotate the partition to be horizontal
       partitionBehindBox.position.set(-28, 0.02, -10.5); // Position behind the box, horizontally
       scene.add(partitionBehindBox);
@@ -239,14 +248,20 @@
 
       // Sidewalk behind the box - left side
       const leftSidewalkBehindBoxGeometry = new THREE.PlaneGeometry(50, 1.5);
-      const leftSidewalkBehindBox = new THREE.Mesh(leftSidewalkBehindBoxGeometry, sidewalkMaterial);
+      const leftSidewalkBehindBox = new THREE.Mesh(
+        leftSidewalkBehindBoxGeometry,
+        sidewalkMaterial
+      );
       leftSidewalkBehindBox.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
       leftSidewalkBehindBox.position.set(-28, 0.02, -8); // Positioned to the left of the road behind the box
       scene.add(leftSidewalkBehindBox);
 
       // Sidewalk behind the box - right side
       const rightSidewalkBehindBoxGeometry = new THREE.PlaneGeometry(50, 1.5);
-      const rightSidewalkBehindBox = new THREE.Mesh(rightSidewalkBehindBoxGeometry, sidewalkMaterial);
+      const rightSidewalkBehindBox = new THREE.Mesh(
+        rightSidewalkBehindBoxGeometry,
+        sidewalkMaterial
+      );
       rightSidewalkBehindBox.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
       rightSidewalkBehindBox.position.set(-28, 0.02, -13); // Positioned to the right of the road behind the box
       scene.add(rightSidewalkBehindBox);
@@ -419,7 +434,7 @@
         }
 
         // Increment time
-        simulatedTime += 0.1; // Adjust speed of time passage here
+        simulatedTime += 0.01; // Adjust speed of time passage here
         if (simulatedTime >= 24) simulatedTime = 0;
 
         const hour = simulatedTime % 24;
@@ -483,42 +498,6 @@
         }
       }
 
-      // Add raycaster for click detection
-      const raycaster = new THREE.Raycaster();
-      const mouse = new THREE.Vector2();
-
-      document.addEventListener("click", onDocumentMouseClick, false);
-
-      function onDocumentMouseClick(event) {
-        event.preventDefault();
-
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-
-        const intersects = raycaster.intersectObjects(
-          models.map((model) => model.children).flat()
-        );
-
-        if (intersects.length > 0) {
-          const clickedModel = intersects[0].object;
-          if (clickedModel.userData.clickable) {
-            animateLightsOn();
-          }
-        }
-      }
-
-      // Animation loop
-      const clock = new THREE.Clock();
-      let lightsOn = false;
-      let lightIntensity = 0;
-
-      function animateLightsOn() {
-        lightsOn = true;
-        lightIntensity = 0;
-      }
-
       // Render the scene
       function animate() {
         requestAnimationFrame(animate);
@@ -535,14 +514,6 @@
 
         // Update time of day
         updateTimeOfDay();
-
-        streetLights.forEach((light) => {
-          if (light.boundingBox.containsPoint(controls.getObject().position)) {
-            light.spotlight.visible = true;
-          } else {
-            light.spotlight.visible = false;
-          }
-        });
 
         renderer.render(scene, camera);
       }
