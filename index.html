@@ -93,11 +93,12 @@
 
         // Define the positions and rotations for the 4 apartment models
         const apartmentConfigs = [
-          { position: [-10, 0, 10], rotation: Math.PI / 2 },
-          { position: [-10, 0, 35], rotation: Math.PI / 2 },
-          { position: [10, 0, 10], rotation: (3 * Math.PI) / 2 },
-          { position: [10, 0, 35], rotation: (3 * Math.PI) / 2 },
-          { position: [-26, 0, -2], rotation: (3 * Math.PI) / 3 },
+            { position: [-10, 0, 10], rotation: Math.PI / 2 },
+            { position: [-10, 0, 35], rotation: Math.PI / 2 },
+            { position: [10, 0, 10], rotation: (3 * Math.PI) / 2 },
+            { position: [10, 0, 35], rotation: (3 * Math.PI) / 2 },
+            { position: [-26, 0, -2], rotation: (3 * Math.PI) / 3 },
+            { position: [-26, 0, 42], rotation: 0 }, // 0 degrees
         ];
 
         apartmentConfigs.forEach((config) => {
@@ -281,6 +282,75 @@
       rightSidewalkBehindBox.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
       rightSidewalkBehindBox.position.set(-28, 0.02, -13); // Positioned to the right of the road behind the box
       scene.add(rightSidewalkBehindBox);
+
+      const roadFrontGeometry = new THREE.PlaneGeometry(50, 4);
+      const roadFrontBox = new THREE.Mesh(roadFrontGeometry, roadMaterial);
+      roadFrontBox.rotation.x = -Math.PI / 2; // Rotate the road to be horizontal
+      roadFrontBox.position.set(-25, 0.01, 52); // Position Front the box, horizontally
+      scene.add(roadFrontBox);
+
+      const partitionFrontGeometry = new THREE.PlaneGeometry(50, 0.2);
+      const partitionFront = new THREE.Mesh(
+        partitionFrontGeometry,
+        partitionMaterial
+      );
+      partitionFront.rotation.x = -Math.PI / 2; // Rotate the partition to be horizontal
+      partitionFront.position.set(-28, 0.02, 52); // Position behind the box, horizontally
+      scene.add(partitionFront);
+
+      const leftSidewalkFrontGeometry = new THREE.PlaneGeometry(50, 1.5);
+      const leftSidewalkFront = new THREE.Mesh(
+        leftSidewalkFrontGeometry,
+        sidewalkMaterial
+      );
+      leftSidewalkFront.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      leftSidewalkFront.position.set(-28, 0.02, 54); // Positioned to the left of the road behind the box
+      scene.add(leftSidewalkFront);
+
+      // Sidewalk behind the box - right side
+      const rightSidewalkFrontGeometry = new THREE.PlaneGeometry(50, 4);
+      const rightSidewalkFront = new THREE.Mesh(
+        rightSidewalkFrontGeometry,
+        sidewalkMaterial
+      );
+      rightSidewalkFront.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      rightSidewalkFront.position.set(-28, 0.02, 50); // Positioned to the right of the road behind the box
+      scene.add(rightSidewalkFront);
+
+      // Vertical park road
+      const roadParkGeometry = new THREE.PlaneGeometry(4, 120);
+      const roadParkBox = new THREE.Mesh(roadParkGeometry, roadMaterial);
+      roadParkBox.rotation.x = -Math.PI / 2; // Rotate the road to be horizontal
+      roadParkBox.position.set(-42, 0.01, 52); // Position Park the box, vertically
+      scene.add(roadParkBox);
+
+      const partitionParkGeometry = new THREE.PlaneGeometry(0.2, 120);
+      const partitionPark = new THREE.Mesh(
+        partitionParkGeometry,
+        partitionMaterial
+      );
+      partitionPark.rotation.x = -Math.PI / 2; // Rotate the partition to be horizontal
+      partitionPark.position.set(-42, 0.02, 52); // Position partition on the park road
+      scene.add(partitionPark);
+
+      const leftSidewalkParkGeometry = new THREE.PlaneGeometry(2, 120);
+      const leftSidewalkPark = new THREE.Mesh(
+        leftSidewalkParkGeometry,
+        sidewalkMaterial
+      );
+      leftSidewalkPark.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      leftSidewalkPark.position.set(-39, 0.02, 52); // Positioned to the left of the park road
+      scene.add(leftSidewalkPark);
+
+      // Sidewalk for park road - right side
+      const rightSidewalkParkGeometry = new THREE.PlaneGeometry(2, 120);
+      const rightSidewalkPark = new THREE.Mesh(
+        rightSidewalkParkGeometry,
+        sidewalkMaterial
+      );
+      rightSidewalkPark.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      rightSidewalkPark.position.set(-45, 0.02, 52); // Positioned to the right of the park road
+      scene.add(rightSidewalkPark);
 
       // Create sky
       const skyGeometry = new THREE.SphereGeometry(2000, 32, 32); // Larger sphere for skybox
