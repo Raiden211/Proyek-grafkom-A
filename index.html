@@ -12,9 +12,31 @@
       canvas {
         display: block;
       }
+      #message-box {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        display: none;
+        text-align: center;
+      }
+      #ui-prompt {
+        position: absolute;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        display: none;
+      }
     </style>
   </head>
   <body>
+    <div id="message-box">Press 'E' to talk to the model</div>
+    <div id="ui-prompt">Press 'E' to interact</div>
     <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/controls/PointerLockControls.js"></script>
@@ -30,7 +52,8 @@
       const renderer = new THREE.WebGLRenderer();
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
-
+      const uiPrompt = document.getElementById("ui-prompt");
+      const messageBox = document.getElementById("message-box");
       // Position the camera
       camera.position.z = 5;
       camera.position.y = 1;
@@ -460,11 +483,15 @@
       const jumpDistance = 1;
       const gravity = 0.1; // Adjust as necessary for your setup
       let isJumping = false;
+      let interacting = false;
 
       function onKeyDown(event) {
         const key = event.key.toUpperCase();
         if (["W", "A", "S", "D", " "].includes(key)) {
           keysPressed[key] = true;
+        }
+        if (key === "E") {
+          interactWithModel();
         }
       }
 
@@ -601,6 +628,32 @@
           clouds.forEach((cloud) => (cloud.visible = true));
         }
       }
+      function checkProximityToModel() {
+        const model = models[0];
+        if (!model) return;
+
+        const distance = camera.position.distanceTo(model.position);
+        if (distance < 5 && !interacting) {
+          uiPrompt.style.display = "block";
+        } else {
+          uiPrompt.style.display = "none";
+        }
+      }
+      function interactWithModel() {
+        const model = models[0];
+        if (!model) return;
+
+        const distance = camera.position.distanceTo(model.position);
+        if (distance < 5) {
+          interacting = true;
+          messageBox.style.display = "block";
+          messageBox.innerHTML = "Hello! How can I help you today?";
+          setTimeout(() => {
+            interacting = false;
+            messageBox.style.display = "none";
+          }, 3000); // Display the message for 3 seconds
+        }
+      }
 
       // Render the scene
       function animate() {
@@ -629,7 +682,7 @@
             cloud.position.x = 500;
           }
         });
-
+        checkProximityToModel();
         // Update time of day (if applicable)
         updateTimeOfDay();
 
