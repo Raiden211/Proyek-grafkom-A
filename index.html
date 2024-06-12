@@ -54,17 +54,24 @@
       const models = [];
 
       loader.load("kotak_listrik/scene.gltf", function (gltf) {
-        const model = gltf.scene;
-        model.position.set(-6, 0, -5);
-        
-        // Rotate the model 90 degrees on the Y-axis
-        model.rotation.y = Math.PI / 2; // Rotate 90 degrees
-        
-        scene.add(model);
+            kotakListrik = gltf.scene;
+            kotakListrik.position.set(-6, 0, -5);
+            
+            // Rotate the model 90 degrees on the Y-axis
+            kotakListrik.rotation.y = Math.PI / 2; // Rotate 90 degrees
+            
+            scene.add(kotakListrik);
 
-        // Compute the bounding box for the model
-        model.userData.boundingBox = new THREE.Box3().setFromObject(model);
-        models.push(model);
+            // Compute the bounding box for the model
+            kotakListrik.userData.boundingBox = new THREE.Box3().setFromObject(kotakListrik);
+            models.push(kotakListrik);
+
+            // Add event listener for click event on kotak_listrik
+            kotakListrik.traverse(function (child) {
+                if (child.isMesh) {
+                    child.userData.clickable = true;
+                }
+            });
         });
 
       loader.load("apartment1/scene.gltf", function (gltf) {
@@ -133,6 +140,13 @@
               light.rotation.y = Math.PI
             }
 
+            const spotlight = new THREE.SpotLight(0xffffff, 1, 10, Math.PI / 6, 0.5, 2);
+            spotlight.position.set(0, 10, 0);
+            spotlight.target.position.set(0, 0, 0);
+            spotlight.visible = false; // Initially invisible
+            light.add(spotlight);
+            light.add(spotlight.target);
+
             scene.add(light);
 
             // Compute the bounding box only for the base of the street light
@@ -140,7 +154,7 @@
               new THREE.Vector3(pos[0], pos[1] + 0.1, pos[2]), // Center at the base
               new THREE.Vector3(0.2, 0.5, 0.2) // Size of the base box
             );
-            streetLights.push({ object: light, boundingBox: baseBox });
+            streetLights.push({ object: light, spotlight, boundingBox: baseBox });
 
             console.log("Street light added at position:", pos); // Debug statement
           },
@@ -469,6 +483,42 @@
         }
       }
 
+      // Add raycaster for click detection
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      document.addEventListener("click", onDocumentMouseClick, false);
+
+      function onDocumentMouseClick(event) {
+        event.preventDefault();
+
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+
+        const intersects = raycaster.intersectObjects(
+          models.map((model) => model.children).flat()
+        );
+
+        if (intersects.length > 0) {
+          const clickedModel = intersects[0].object;
+          if (clickedModel.userData.clickable) {
+            animateLightsOn();
+          }
+        }
+      }
+
+      // Animation loop
+      const clock = new THREE.Clock();
+      let lightsOn = false;
+      let lightIntensity = 0;
+
+      function animateLightsOn() {
+        lightsOn = true;
+        lightIntensity = 0;
+      }
+
       // Render the scene
       function animate() {
         requestAnimationFrame(animate);
@@ -485,6 +535,14 @@
 
         // Update time of day
         updateTimeOfDay();
+
+        streetLights.forEach((light) => {
+          if (light.boundingBox.containsPoint(controls.getObject().position)) {
+            light.spotlight.visible = true;
+          } else {
+            light.spotlight.visible = false;
+          }
+        });
 
         renderer.render(scene, camera);
       }
