@@ -36,7 +36,7 @@
       camera.position.y = 1;
 
       // Define a target position for the camera to look at
-      const lookAtTarget = new THREE.Vector3(0, 0, 10); // You can adjust the position as needed
+      const lookAtTarget = new THREE.Vector3(0, 0, -10); // You can adjust the position as needed
 
       // Update the camera's lookAt target
       camera.lookAt(lookAtTarget);
@@ -64,6 +64,26 @@
 
         // Compute the bounding box for the model
         model.userData.boundingBox = new THREE.Box3().setFromObject(model);
+        models.push(model);
+      });
+
+      let mixer; // Declare the animation mixer variable
+
+      loader.load("low_poly_male/scene.gltf", function (gltf) {
+        const model = gltf.scene;
+        model.position.set(0, 0, -5);
+        model.scale.set(0.5, 0.4, 0.5);
+        scene.add(model);
+
+        // Initialize animation mixer
+        mixer = new THREE.AnimationMixer(model);
+
+        // Assuming your walking animation is named "walking"
+        const walkingAction = mixer.clipAction(
+          gltf.animations.find((animation) => animation.name === "walking")
+        );
+        walkingAction.play();
+
         models.push(model);
       });
 
@@ -98,8 +118,10 @@
         });
       });
 
-      // Load and place street light models
-      // Load and place street light models
+      // Declare streetLights arrays
+      const streetLights = [];
+
+      // Load and place street light models with spotlights
       const streetLightLoader = new THREE.GLTFLoader();
       const streetLightScale = 0.01; // Scale down the street light to be 10x smaller
       const streetLightPositions = [
@@ -112,7 +134,7 @@
         [3, 0, 47], // Right side
         [-37.5, 0, -8], // road2
       ];
-      const streetLights = [];
+
       streetLightPositions.forEach((pos, index) => {
         streetLightLoader.load(
           "street_light/scene.gltf",
@@ -136,31 +158,25 @@
 
             scene.add(light);
 
+            // // Create a spotlight for the street light
+            // const spotlight = new THREE.SpotLight(0xffffff, 1);
+            // spotlight.position.set(pos[0], pos[1] + 1, pos[2]);
+            // spotlight.target.position.set(pos[0], pos[1], pos[2] + 1);
+            // spotlight.angle = Math.PI / 6; // Adjust the angle of the spotlight
+            // spotlight.penumbra = 0.1; // Soft edges for the spotlight
+            // spotlight.decay = 2; // Light decay
+            // spotlight.distance = 10; // Maximum distance of the light
+
+            // // Add the spotlight and its target to the scene
+            // scene.add(spotlight);
+            // scene.add(spotlight.target);
+
             // Compute the bounding box only for the base of the street light
             const baseBox = new THREE.Box3().setFromCenterAndSize(
               new THREE.Vector3(pos[0], pos[1] + 0.1, pos[2]), // Center at the base
               new THREE.Vector3(0.2, 0.5, 0.2) // Size of the base box
             );
             streetLights.push({ object: light, boundingBox: baseBox });
-
-            // Add a directional light above the street light directed to ground
-            const streetLightDirectionalLight = new THREE.DirectionalLight(
-              0xffffff,
-              1
-            );
-            streetLightDirectionalLight.position.set(
-              pos[0],
-              pos[1] - 0.1,
-              pos[2]
-            );
-            scene.add(streetLightDirectionalLight);
-
-            // Calculate a point on the ground below the streetlight
-            const groundPoint = new THREE.Vector3(pos[0], 0, pos[2]);
-
-            // Set the target of the directional light to the ground point
-            streetLightDirectionalLight.target.position.copy(groundPoint);
-            scene.add(streetLightDirectionalLight.target);
 
             console.log("Street light added at position:", pos); // Debug statement
           },
@@ -502,7 +518,18 @@
       function animate() {
         requestAnimationFrame(animate);
 
-        // Move clouds
+        // Update the animation mixer in each frame
+        if (mixer) {
+          mixer.update(0.01); // Adjust the time delta as needed
+        }
+
+        // Move the model forward
+        if (models.length > 0) {
+          const model = models[0]; // Assuming the model is the first item in the models array
+          model.position.z += 0.01; // Adjust the speed of movement
+        }
+
+        // Move clouds (if clouds are part of your scene)
         clouds.forEach((cloud) => {
           cloud.position.x -= 0.05; // Adjust speed of clouds
 
@@ -512,7 +539,7 @@
           }
         });
 
-        // Update time of day
+        // Update time of day (if applicable)
         updateTimeOfDay();
 
         renderer.render(scene, camera);
