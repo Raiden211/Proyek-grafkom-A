@@ -42,6 +42,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/controls/PointerLockControls.js"></script>
     <script>
       // Set up the scene, camera, and renderer
+      const clock = new THREE.Clock();
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(
         75,
@@ -90,6 +91,24 @@
         models.push(model);
       });
 
+      loader.load("low_poly_male/scene.gltf", function (gltf) {
+        const model = gltf.scene;
+        model.position.set(0, 0, -5);
+        model.scale.set(0.5, 0.4, 0.5);
+        scene.add(model);
+
+        // Initialize animation mixer
+        mixer = new THREE.AnimationMixer(model);
+
+        // Assuming your walking animation is named "walking"
+        const walkingAction = mixer.clipAction(
+          gltf.animations.find((animation) => animation.name === "walking")
+        );
+        walkingAction.play();
+
+        models.push(model);
+      });
+
       let mixer, truckMixer; // Declare the animation mixer variable
       // Load the low-poly truck model with Car engine animation
       loader.load("low-poly_truck/scene.gltf", function (gltf) {
@@ -108,24 +127,6 @@
         engineAction.play();
 
         models.push(truck);
-      });
-
-      loader.load("cartoon_dude_animated/scene.gltf", function (gltf) {
-        const model = gltf.scene;
-        model.position.set(0, 0, -5);
-        model.scale.set(1.5, 1.5, 1.5);
-        scene.add(model);
-
-        // Initialize animation mixer
-        mixer = new THREE.AnimationMixer(model);
-
-        // Assuming your walking animation is named "walking"
-        const walkingAction = mixer.clipAction(
-          gltf.animations.find((animation) => animation.name === "walking")
-        );
-        walkingAction.play();
-
-        models.push(model);
       });
 
       loader.load("apartment1/scene.gltf", function (gltf) {
@@ -167,13 +168,13 @@
       const streetLightLoader = new THREE.GLTFLoader();
       const streetLightScale = 0.01; // Scale down the street light to be 10x smaller
       const streetLightPositions = [
-        [-2.5, 0, 0], // Left side
-        [-2.5, 0, 22.5], // Left side
-        [-2.5, 0, 47], // Left side
+        [-3, 0, 0], // Left side
+        [-3, 0, 22.5], // Left side
+        [-3, 0, 47], // Left side
         [-15, 0, -8], // road2
-        [2.5, 0, 0], // Right side
-        [2.5, 0, 22.5], // Right side
-        [2.5, 0, 47], // Right side
+        [3, 0, 0], // Right side
+        [3, 0, 22.5], // Right side
+        [3, 0, 47], // Right side
         [-37.5, 0, -8], // road2
       ];
 
@@ -232,6 +233,96 @@
         );
       });
 
+      loader.load("urban_asset/scene.gltf", function (gltf) {
+            const urbanScene = gltf.scene;
+            urbanScene.traverse(function (child) {
+                if (child.isMesh && child.name.includes("Tree")) {
+                    // Create a clone of the tree mesh
+                    const tree = child.clone();
+                    tree.position.set(-22, 0, 17); // Set position to (-22, 0.5, 17)
+                    tree.scale.set(0.5, 0.5, 0.5); // Adjust the scale if necessary
+                    scene.add(tree);
+
+                    // Compute the bounding box for the tree
+                    tree.userData.boundingBox = new THREE.Box3().setFromObject(tree);
+                    models.push(tree);
+                }
+            });
+        });
+
+        let helicopter;
+        let helicopterMixer;
+        let angle = 0;
+
+        loader.load("low_poly_helicopter/scene.gltf", function (gltf) {
+            helicopter = gltf.scene;
+            helicopter.position.set(-22, 40, 22); // Set initial position
+            helicopter.scale.set(1, 1, 1); // Normal size
+            scene.add(helicopter);
+
+            // Compute the bounding box for the helicopter
+            helicopter.userData.boundingBox = new THREE.Box3().setFromObject(helicopter);
+            models.push(helicopter);
+
+            // Initialize animation mixer for the helicopter model
+            helicopterMixer = new THREE.AnimationMixer(helicopter);
+
+            // Find the "Main" animation clip
+            const mainClip = gltf.animations.find(animation => animation.name === "Main");
+
+            // Create an action for the "Main" animation
+            if (mainClip) {
+                const mainAction = helicopterMixer.clipAction(mainClip);
+                mainAction.play();
+            } else {
+                console.warn("Main animation not found in the GLTF model.");
+            }
+
+            // Add the mixer to an array of mixers if you have multiple animations
+            mixers.push(helicopterMixer);
+        });
+
+        let parkGateMixer;
+        loader.load("low_poly_vehicle_barrier/scene.gltf", function (gltf) {
+            const urbanScene = gltf.scene;
+            urbanScene.traverse(function (child) {
+                if (child.isMesh) {
+                    const park_gate = child.clone();
+                    park_gate.position.set(-20, 2, 17); // Adjust position as needed
+                    park_gate.scale.set(1.3, 1.3, 1.3); // Use a small positive scale
+                    scene.add(park_gate);
+
+                    // Initialize animation mixer for the park gate
+                    parkGateMixer = new THREE.AnimationMixer(park_gate);
+
+                    // Assuming your barrier animations are named "Open" and "Close"
+                    const openAction = parkGateMixer.clipAction(
+                        gltf.animations.find(
+                            (animation) => animation.name === "Open"
+                        )
+                    );
+                    const closeAction = parkGateMixer.clipAction(
+                        gltf.animations.find(
+                            (animation) => animation.name === "Close"
+                        )
+                    );
+
+                    // Compute the bounding box for the park gate
+                    park_gate.userData.boundingBox = new THREE.Box3().setFromObject(
+                        park_gate
+                    );
+                    models.push(park_gate);
+
+                    // Initially, the barrier is closed
+                    closeAction.play();
+
+                    // Store the actions in the userData for easy access
+                    park_gate.userData.openAction = openAction;
+                    park_gate.userData.closeAction = closeAction;
+                }
+            });
+        });
+
       // Create the floor
       const floorGeometry = new THREE.PlaneGeometry(100, 100);
       const floorMaterial = new THREE.MeshLambertMaterial({
@@ -242,6 +333,25 @@
       floor.rotation.x = -Math.PI / 2; // Rotate the floor to be horizontal
       floor.position.y = 0; // Ensure the floor is at y=0
       scene.add(floor);
+
+      const parkingGeometry = new THREE.PlaneGeometry(26.5, 35); // Adjust dimensions as needed
+
+      const parkingMaterial = new THREE.MeshLambertMaterial({
+        color: 0xaaaaaa, // Gray color for parking area
+        side: THREE.DoubleSide,
+      });
+
+        // Create the parking area mesh
+      const parkingArea = new THREE.Mesh(parkingGeometry, parkingMaterial);
+
+        // Rotate the parking area to be horizontal
+      parkingArea.rotation.x = -Math.PI / 2;
+
+        // Position the parking area between the defined positions
+      parkingArea.position.set(-26, 0.01, 20.25); // Adjust position as needed
+
+        // Add the parking area to the scene
+      scene.add(parkingArea);
 
       // Create the main road
       const roadGeometry = new THREE.PlaneGeometry(4, 120);
@@ -629,11 +739,11 @@
         }
       }
       function checkProximityToModel() {
-        const model = models[8];
+        const model = models[0];
         if (!model) return;
 
         const distance = camera.position.distanceTo(model.position);
-        if (distance < 10 && !interacting) {
+        if (distance < 5 && !interacting) {
           uiPrompt.style.display = "block";
         } else {
           uiPrompt.style.display = "none";
@@ -644,7 +754,7 @@
         if (!model) return;
 
         const distance = camera.position.distanceTo(model.position);
-        if (distance < 10) {
+        if (distance < 5) {
           interacting = true;
           messageBox.style.display = "block";
           messageBox.innerHTML = "Hello! How can I help you today?";
@@ -655,13 +765,19 @@
         }
       }
 
+      
+      const mixers = [];
       let forward = true; // Flag to track the direction of movement
       let sideway = false;
-      let walkingSpeed = 0.01; // Speed of movement
+      let walkingSpeed = 0.01;
 
       // Render the scene
       function animate() {
         requestAnimationFrame(animate);
+
+        mixers.forEach(mixer => {
+            mixer.update(0.05); // Adjust the time delta as needed
+        });
 
         // Update the animation mixer in each frame
         if (mixer) {
@@ -671,43 +787,98 @@
           truckMixer.update(0.01); // Adjust the time delta as needed
         }
 
+        if (helicopter) {
+            const radius = 50; // Radius lintasan lingkaran
+            const speed = 0.01; // Kecepatan rotasi
+            angle += speed; // Tambahkan sudut untuk rotasi
+
+            // Perbarui posisi x dan z untuk membuat gerakan melingkar
+            helicopter.position.x = radius * Math.cos(angle);
+            helicopter.position.z = radius * Math.sin(angle);
+
+            // Hitung vektor arah yang sesuai dengan orientasi helikopter
+            const direction = new THREE.Vector3(
+                -Math.sin(angle), // Penyesuaian orientasi awal
+                0,
+                Math.cos(angle)
+            );
+
+            // Putar helikopter untuk menghadap arah gerakannya
+            helicopter.lookAt(helicopter.position.clone().add(direction));
+
+            // Pastikan rotasi helikopter sesuai dengan orientasi yang diinginkan
+            helicopter.rotateY(Math.PI / 2); // Sesuaikan rotasi jika diperlukan
+        }
+
+        if (parkGateMixer) {
+                parkGateMixer.update(clock.getDelta());
+                // Check the distance between the camera and the park gate
+                const parkGate = models.find(
+                    (model) =>
+                        model.position.x === -20 && model.position.y === 2 && model.position.z === 17
+                );
+                if (parkGate) {
+                    const distance = camera.position.distanceTo(parkGate.position);
+                    const openAction = parkGate.userData.openAction;
+                    const closeAction = parkGate.userData.closeAction;
+                    if (distance < 5) {
+                        // If the camera is within 5 units, raise the barrier
+                        if (!openAction.isRunning()) {
+                            closeAction.stop();
+                            openAction.play();
+                        }
+                    } else {
+                        // If the camera is farther than 5 units, lower the barrier
+                        if (!closeAction.isRunning()) {
+                            openAction.stop();
+                            closeAction.play();
+                        }
+                    }
+                }
+            }
+
         // Move the model forward
         if (models.length > 0) {
-          const model = models[8]; // Assuming the model is the first item in the models array
-
-          if (forward && !sideway) {//1
-            model.position.z += walkingSpeed;
-          } else if (!forward && !sideway) {//3
-            model.position.z -= walkingSpeed;
-          } else if (!forward && sideway) {//2
-            model.position.x -= walkingSpeed;
-          } else if (forward && sideway) {//4
-            model.position.x += walkingSpeed;
-          }
-
-          // Check if the model has reached the desired positions
-          if (model.position.z >= 50 && forward && !sideway) {//1
-            // Change direction to left and rotate 90 degrees
-            forward = false;
-            model.rotation.y = (3 * Math.PI) / 2;
-            sideway = true;
-          } else if (model.position.x <= -40 && !forward && sideway) {//2
-            // Change direction to down and rotate 90 degrees
-            forward = false;
-            model.rotation.y = Math.PI;
-            sideway = false;
-          } else if (model.position.z <= -10 && !forward && !sideway) {//3
-            // Change direction to right and rotate 90 degrees
-            forward = true;
-            model.rotation.y = Math.PI / 2;
-            sideway = true;
-          } else if (model.position.x >= 0 && forward && sideway) {//4
-            // Change direction to up, rotate 90 degrees, and reset sideway flag
-            forward = true;
-            model.rotation.y = 0;
-            sideway = false;
-          }
+          const model = models[0]; // Assuming the model is the first item in the models array
+          model.position.z += 0.01; // Adjust the speed of movement
         }
+
+        // if (models.length > 0) {
+        //   const model = models[1]; // Assuming the model is the first item in the models array
+
+        //   if (forward && !sideway) {//1
+        //     model.position.z += walkingSpeed;
+        //   } else if (!forward && !sideway) {//3
+        //     model.position.z -= walkingSpeed;
+        //   } else if (!forward && sideway) {//2
+        //     model.position.x -= walkingSpeed;
+        //   } else if (forward && sideway) {//4
+        //     model.position.x += walkingSpeed;
+        //   }
+
+        //   // Check if the model has reached the desired positions
+        //   if (model.position.z >= 50 && forward && !sideway) {//1
+        //     // Change direction to left and rotate 90 degrees
+        //     forward = false;
+        //     model.rotation.y = (3 * Math.PI) / 2;
+        //     sideway = true;
+        //   } else if (model.position.x <= -40 && !forward && sideway) {//2
+        //     // Change direction to down and rotate 90 degrees
+        //     forward = false;
+        //     model.rotation.y = Math.PI;
+        //     sideway = false;
+        //   } else if (model.position.z <= -10 && !forward && !sideway) {//3
+        //     // Change direction to right and rotate 90 degrees
+        //     forward = true;
+        //     model.rotation.y = Math.PI / 2;
+        //     sideway = true;
+        //   } else if (model.position.x >= 0 && forward && sideway) {//4
+        //     // Change direction to up, rotate 90 degrees, and reset sideway flag
+        //     forward = true;
+        //     model.rotation.y = 0;
+        //     sideway = false;
+        //   }
+        // }
 
         // Move clouds (if clouds are part of your scene)
         clouds.forEach((cloud) => {
@@ -718,7 +889,6 @@
             cloud.position.x = 500;
           }
         });
-
         checkProximityToModel();
         // Update time of day (if applicable)
         updateTimeOfDay();
@@ -726,6 +896,7 @@
         renderer.render(scene, camera);
       }
 
+      //console.log(models);
       // Start rendering the scene
       animate();
 
