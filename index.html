@@ -94,7 +94,7 @@
       // Load the low-poly truck model with Car engine animation
       loader.load("low-poly_truck/scene.gltf", function (gltf) {
         const truck = gltf.scene;
-        truck.position.set(0, 0, -10); // Adjust the position as needed
+        truck.position.set(0, 0.5, -10); // Adjust the position as needed
         truck.scale.set(0.01, 0.01, 0.01); // Adjust the scale as needed
         scene.add(truck);
 
@@ -629,11 +629,11 @@
         }
       }
       function checkProximityToModel() {
-        const model = models[0];
+        const model = models[8];
         if (!model) return;
 
         const distance = camera.position.distanceTo(model.position);
-        if (distance < 5 && !interacting) {
+        if (distance < 10 && !interacting) {
           uiPrompt.style.display = "block";
         } else {
           uiPrompt.style.display = "none";
@@ -644,7 +644,7 @@
         if (!model) return;
 
         const distance = camera.position.distanceTo(model.position);
-        if (distance < 5) {
+        if (distance < 10) {
           interacting = true;
           messageBox.style.display = "block";
           messageBox.innerHTML = "Hello! How can I help you today?";
@@ -657,7 +657,7 @@
 
       let forward = true; // Flag to track the direction of movement
       let sideway = false;
-      let walkingSpeed = 0.2; // Speed of movement
+      let walkingSpeed = 0.01; // Speed of movement
 
       // Render the scene
       function animate() {
