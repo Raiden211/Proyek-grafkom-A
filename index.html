@@ -67,7 +67,7 @@
         models.push(model);
       });
 
-      let mixer; // Declare the animation mixer variable
+      let mixer, truckMixer; // Declare the animation mixer variable
 
       loader.load("low_poly_male/scene.gltf", function (gltf) {
         const model = gltf.scene;
@@ -86,6 +86,24 @@
 
         models.push(model);
       });
+      // Load the low-poly truck model with Car engine animation
+      loader.load("low-poly_truck/scene.gltf", function (gltf) {
+        const truck = gltf.scene;
+        truck.position.set(0, 0, -10); // Adjust the position as needed
+        truck.scale.set(0.01, 0.01, 0.01); // Adjust the scale as needed
+        scene.add(truck);
+
+        // Initialize animation mixer for the truck model
+        truckMixer = new THREE.AnimationMixer(truck);
+
+        // Assuming your car engine animation is named "Car engine"
+        const engineAction = truckMixer.clipAction(
+          gltf.animations.find((animation) => animation.name === "Car engine")
+        );
+        engineAction.play();
+
+        models.push(truck);
+      });
 
       loader.load("apartment1/scene.gltf", function (gltf) {
         const newModel = gltf.scene;
@@ -93,12 +111,12 @@
 
         // Define the positions and rotations for the 4 apartment models
         const apartmentConfigs = [
-            { position: [-10, 0, 10], rotation: Math.PI / 2 },
-            { position: [-10, 0, 35], rotation: Math.PI / 2 },
-            { position: [10, 0, 10], rotation: (3 * Math.PI) / 2 },
-            { position: [10, 0, 35], rotation: (3 * Math.PI) / 2 },
-            { position: [-26, 0, -2], rotation: (3 * Math.PI) / 3 },
-            { position: [-26, 0, 42], rotation: 0 }, // 0 degrees
+          { position: [-10, 0, 10], rotation: Math.PI / 2 },
+          { position: [-10, 0, 35], rotation: Math.PI / 2 },
+          { position: [10, 0, 10], rotation: (3 * Math.PI) / 2 },
+          { position: [10, 0, 35], rotation: (3 * Math.PI) / 2 },
+          { position: [-26, 0, -2], rotation: (3 * Math.PI) / 3 },
+          { position: [-26, 0, 42], rotation: 0 }, // 0 degrees
         ];
 
         apartmentConfigs.forEach((config) => {
@@ -591,6 +609,9 @@
         // Update the animation mixer in each frame
         if (mixer) {
           mixer.update(0.01); // Adjust the time delta as needed
+        }
+        if (truckMixer) {
+          truckMixer.update(0.01); // Adjust the time delta as needed
         }
 
         // Move the model forward
