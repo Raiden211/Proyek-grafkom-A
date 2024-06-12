@@ -1,31 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Camera and GLTF Model</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js GLTF Model</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-        }
-        #jsonContainer {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(255, 255, 255, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-        }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
     </style>
-</head>
-<body>
-    <div id="jsonContainer"></div>
-    <script type="module" src="index.js"></script>
-</body>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/controls/PointerLockControls.js"></script>
+    <script>
+      // Set up the scene, camera, and renderer
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        5000
+      ); // Increased far clipping plane
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Position the camera
+      camera.position.z = 5;
+      camera.position.y = 1;
+
+      // Define a target position for the camera to look at
+      const lookAtTarget = new THREE.Vector3(0, 0, 10); // You can adjust the position as needed
+
+      // Update the camera's lookAt target
+      camera.lookAt(lookAtTarget);
+
+      // Add lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(10, 10, 10);
+      scene.add(directionalLight);
+
+      // Load the GLTF models and calculate bounding boxes
+      const loader = new THREE.GLTFLoader();
+      const models = [];
+
+      loader.load("kotak_listrik/scene.gltf", function (gltf) {
+        const model = gltf.scene;
+        model.position.set(-6, 0, -5);
+        
+        // Rotate the model 90 degrees on the Y-axis
+        model.rotation.y = Math.PI / 2; // Rotate 90 degrees
+        
+        scene.add(model);
+
+        // Compute the bounding box for the model
+        model.userData.boundingBox = new THREE.Box3().setFromObject(model);
+        models.push(model);
+        });
+
+      loader.load("apartment1/scene.gltf", function (gltf) {
+        const newModel = gltf.scene;
+        newModel.scale.set(0.01, 0.01, 0.01); // Adjusted scale
+
+        // Define the positions and rotations for the 4 apartment models
+        const apartmentConfigs = [
+          { position: [-10, 0, 10], rotation: Math.PI / 2 },
+          { position: [-10, 0, 35], rotation: Math.PI / 2 },
+          { position: [10, 0, 10], rotation: (3 * Math.PI) / 2 },
+          { position: [10, 0, 35], rotation: (3 * Math.PI) / 2 },
+          { position: [-26, 0, -2], rotation: (3 * Math.PI) / 3 },
+        ];
+
+        apartmentConfigs.forEach((config) => {
+          const apartmentClone = newModel.clone();
+          apartmentClone.position.set(
+            config.position[0],
+            config.position[1],
+            config.position[2]
+          );
+          apartmentClone.rotation.y = config.rotation;
+          scene.add(apartmentClone);
+
+          // Compute the bounding box for the cloned model
+          apartmentClone.userData.boundingBox = new THREE.Box3().setFromObject(
+            apartmentClone
+          );
+          models.push(apartmentClone);
+        });
+      });
+
+      // Load and place street light models
+      const streetLightLoader = new THREE.GLTFLoader();
+      const streetLightScale = 0.01; // Scale down the street light to be 10x smaller
+      const streetLightPositions = [
+        [-3, 0, 0], // Left side
+        [-3, 0, 22.5], // Left side
+        [-3, 0, 47], // Left side
+        [-15, 0, -8], // road2
+        [3, 0, 0], // Right side
+        [3, 0, 22.5], // Right side
+        [3, 0, 47], // Right side
+        [-37.5, 0, -8], // road2
+      ];
+      const streetLights = [];
+      streetLightPositions.forEach((pos, index) => {
+        streetLightLoader.load(
+          "street_light/scene.gltf",
+          function (gltf) {
+            const light = gltf.scene;
+            light.scale.set(
+              streetLightScale,
+              streetLightScale,
+              streetLightScale
+            );
+            light.position.set(pos[0], pos[1], pos[2]);
+
+            // Rotate street lights on the right side to look backward
+            if (index >= 3 && index < 4) {
+              light.rotation.y = Math.PI / 2; // 90 degrees rotation
+            } else if (index >= 7) {
+              light.rotation.y = Math.PI / 2; // 90 degrees rotation
+            }else if (index >= 4){
+              light.rotation.y = Math.PI
+            }
+
+            scene.add(light);
+
+            // Compute the bounding box only for the base of the street light
+            const baseBox = new THREE.Box3().setFromCenterAndSize(
+              new THREE.Vector3(pos[0], pos[1] + 0.1, pos[2]), // Center at the base
+              new THREE.Vector3(0.2, 0.5, 0.2) // Size of the base box
+            );
+            streetLights.push({ object: light, boundingBox: baseBox });
+
+            console.log("Street light added at position:", pos); // Debug statement
+          },
+          undefined,
+          function (error) {
+            console.error(
+              "An error happened during loading street light:",
+              error
+            ); // Error handling
+          }
+        );
+      });
+
+      // Create the floor
+      const floorGeometry = new THREE.PlaneGeometry(100, 100);
+      const floorMaterial = new THREE.MeshLambertMaterial({
+        color: 0x00ff00,
+        side: THREE.DoubleSide,
+      });
+      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.rotation.x = -Math.PI / 2; // Rotate the floor to be horizontal
+      floor.position.y = 0; // Ensure the floor is at y=0
+      scene.add(floor);
+
+      // Create the main road
+      const roadGeometry = new THREE.PlaneGeometry(4, 120);
+      const roadMaterial = new THREE.MeshLambertMaterial({
+        color: 0x333333,
+        side: THREE.DoubleSide,
+      });
+      const road = new THREE.Mesh(roadGeometry, roadMaterial);
+      road.rotation.x = -Math.PI / 2; // Rotate the road to be horizontal
+      road.position.y = 0.01; // Slightly above the floor to avoid z-fighting
+      scene.add(road);
+
+      // Create the horizontal road behind the box
+      const roadBehindBoxGeometry = new THREE.PlaneGeometry(50, 4);
+      const roadBehindBox = new THREE.Mesh(roadBehindBoxGeometry, roadMaterial);
+      roadBehindBox.rotation.x = -Math.PI / 2; // Rotate the road to be horizontal
+      roadBehindBox.position.set(-25, 0.01, -10.5); // Position behind the box, horizontally
+      scene.add(roadBehindBox);
+
+      // Create the partition in the middle of the main road
+      const partitionGeometry = new THREE.PlaneGeometry(0.2, 1000);
+      const partitionMaterial = new THREE.MeshLambertMaterial({
+        color: 0xFFFFFF, // White color for partition
+        side: THREE.DoubleSide,
+      });
+      const partition = new THREE.Mesh(partitionGeometry, partitionMaterial);
+      partition.rotation.x = -Math.PI / 2; // Rotate the partition to be horizontal
+      partition.position.y = 0.02; // Slightly above the road to avoid z-fighting
+      partition.position.x = 0; // Centered on the road
+      scene.add(partition);
+
+      // Create the partition for the road behind the box
+      const partitionBehindBoxGeometry = new THREE.PlaneGeometry(50, 0.2);
+      const partitionBehindBox = new THREE.Mesh(partitionBehindBoxGeometry, partitionMaterial);
+      partitionBehindBox.rotation.x = -Math.PI / 2; // Rotate the partition to be horizontal
+      partitionBehindBox.position.set(-28, 0.02, -10.5); // Position behind the box, horizontally
+      scene.add(partitionBehindBox);
+
+      // Create the sidewalks
+      const sidewalkGeometry = new THREE.PlaneGeometry(2, 1000);
+      const sidewalkMaterial = new THREE.MeshLambertMaterial({
+        color: 0x808080, // Gray color for sidewalks
+        side: THREE.DoubleSide,
+      });
+
+      // Left sidewalk
+      const leftSidewalk = new THREE.Mesh(sidewalkGeometry, sidewalkMaterial);
+      leftSidewalk.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      leftSidewalk.position.y = 0.02; // Slightly above the road to avoid z-fighting
+      leftSidewalk.position.x = -3; // Positioned to the left of the road
+      scene.add(leftSidewalk);
+
+      // Right sidewalk
+      const rightSidewalk = new THREE.Mesh(sidewalkGeometry, sidewalkMaterial);
+      rightSidewalk.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      rightSidewalk.position.y = 0.02; // Slightly above the road to avoid z-fighting
+      rightSidewalk.position.x = 3; // Positioned to the right of the road
+      scene.add(rightSidewalk);
+
+      // Sidewalk behind the box - left side
+      const leftSidewalkBehindBoxGeometry = new THREE.PlaneGeometry(50, 1.5);
+      const leftSidewalkBehindBox = new THREE.Mesh(leftSidewalkBehindBoxGeometry, sidewalkMaterial);
+      leftSidewalkBehindBox.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      leftSidewalkBehindBox.position.set(-28, 0.02, -8); // Positioned to the left of the road behind the box
+      scene.add(leftSidewalkBehindBox);
+
+      // Sidewalk behind the box - right side
+      const rightSidewalkBehindBoxGeometry = new THREE.PlaneGeometry(50, 1.5);
+      const rightSidewalkBehindBox = new THREE.Mesh(rightSidewalkBehindBoxGeometry, sidewalkMaterial);
+      rightSidewalkBehindBox.rotation.x = -Math.PI / 2; // Rotate the sidewalk to be horizontal
+      rightSidewalkBehindBox.position.set(-28, 0.02, -13); // Positioned to the right of the road behind the box
+      scene.add(rightSidewalkBehindBox);
+
+      // Create sky
+      const skyGeometry = new THREE.SphereGeometry(2000, 32, 32); // Larger sphere for skybox
+      const skyMaterial = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+      const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+      scene.add(sky);
+
+      // Create moon with emissive material
+      const moonGeometry = new THREE.SphereGeometry(20, 32, 32); // Enlarged moon
+      const moonMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffcc,
+        emissive: 0xffffcc,
+      });
+      const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+      scene.add(moon);
+
+      // Create sun with emissive material
+      const sunGeometry = new THREE.SphereGeometry(30, 32, 32); // Enlarged sun
+      const sunMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffdd00,
+        emissive: 0xffdd00,
+      });
+      const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+      scene.add(sun);
+
+      // Add clouds
+      const cloudGeometry = new THREE.BoxGeometry(10, 5, 5); // Geometry for clouds
+      const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+
+      // Create multiple clouds
+      const clouds = [];
+      const cloudCount = Math.floor(Math.random() * 31) + 20; // Generates a random number between 30 and 100
+
+      for (let i = 0; i < cloudCount; i++) {
+        const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        cloud.position.set(
+          Math.random() * 1000 - 500,
+          Math.random() * 50 + 50,
+          Math.random() * 1000 - 500
+        );
+        scene.add(cloud);
+        clouds.push(cloud);
+      }
+
+      // Add PointerLockControls
+      const controls = new THREE.PointerLockControls(
+        camera,
+        renderer.domElement
+      );
+      scene.add(controls.getObject());
+
+      // Request pointer lock on click
+      renderer.domElement.addEventListener("click", () => {
+        controls.lock();
+      });
+
+      // Jump function
+      function jump() {
+        let jumpHeight = camera.position.y + jumpDistance;
+        const jumpInterval = setInterval(() => {
+          camera.position.y += 0.1; // Increment Y position for the jump
+          if (camera.position.y >= jumpHeight) {
+            // Check if reached the jump height
+            clearInterval(jumpInterval); // Stop the jump interval
+            fall(); // Start falling back down
+          }
+        }, 20);
+      }
+
+      // Fall function
+      function fall() {
+        const fallInterval = setInterval(() => {
+          camera.position.y -= gravity; // Apply gravity
+          if (camera.position.y <= 1) {
+            // Check if reached the ground
+            camera.position.y = 1; // Set position to ground level
+            clearInterval(fallInterval); // Stop the fall interval
+            isJumping = false; // Reset jumping flag
+          }
+        }, 20);
+      }
+
+      // Event listener for keypress
+      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("keyup", onKeyUp);
+
+      const keysPressed = {};
+      const moveDistance = 0.2;
+      const jumpDistance = 1;
+      const gravity = 0.1; // Adjust as necessary for your setup
+      let isJumping = false;
+
+      function onKeyDown(event) {
+        const key = event.key.toUpperCase();
+        if (["W", "A", "S", "D", " "].includes(key)) {
+          keysPressed[key] = true;
+        }
+      }
+
+      function onKeyUp(event) {
+        const key = event.key.toUpperCase();
+        if (["W", "A", "S", "D", " "].includes(key)) {
+          keysPressed[key] = false;
+        }
+      }
+
+      function moveCharacter() {
+        let prevPosition = camera.position.clone();
+
+        if (keysPressed["W"]) {
+          controls.moveForward(moveDistance);
+        }
+        if (keysPressed["A"]) {
+          controls.moveRight(-moveDistance);
+        }
+        if (keysPressed["S"]) {
+          controls.moveForward(-moveDistance);
+        }
+        if (keysPressed["D"]) {
+          controls.moveRight(moveDistance);
+        }
+        if (keysPressed[" "] && !isJumping) {
+          // Space key for jumping
+          isJumping = true;
+          jump();
+        }
+
+        // Create player's bounding box
+        const playerBox = new THREE.Box3().setFromCenterAndSize(
+          camera.position,
+          new THREE.Vector3(1, 2, 1)
+        );
+
+        // Check for collisions with models
+        models.forEach((model) => {
+          if (
+            model.userData.boundingBox &&
+            playerBox.intersectsBox(model.userData.boundingBox)
+          ) {
+            camera.position.copy(prevPosition); // Revert to previous position on collision
+          }
+        });
+
+        // Check for collisions with the street lights
+        streetLights.forEach(({ boundingBox }) => {
+          if (playerBox.intersectsBox(boundingBox)) {
+            // Revert to previous position on collision
+            camera.position.copy(prevPosition);
+          }
+        });
+
+        requestAnimationFrame(moveCharacter);
+      }
+
+      // Start the continuous movement
+      requestAnimationFrame(moveCharacter);
+
+      // Temporary variable for testing (uncomment to use)
+      let simulatedTime = 14; // Set to a specific hour for testing
+
+      function updateTimeOfDay() {
+        // Get current time if simulatedTime is null
+        if (simulatedTime == null) {
+          const currentTime = new Date();
+          simulatedTime =
+            currentTime.getHours() + currentTime.getMinutes() / 60;
+        }
+
+        // Increment time
+        simulatedTime += 0.1; // Adjust speed of time passage here
+        if (simulatedTime >= 24) simulatedTime = 0;
+
+        const hour = simulatedTime % 24;
+        const skyColor = new THREE.Color();
+        let moonVisible = false;
+        let sunVisible = false;
+
+        // Daytime transitions
+        if (hour >= 6 && hour < 8) {
+          const t = (hour - 6) / 2;
+          const fogColor = new THREE.Color(0xa9a9a9); // Foggy gray color
+          skyColor.lerpColors(new THREE.Color(0x000033), fogColor, t);
+          sunVisible = false; // Hide the sun during the foggy period
+        } else if (hour >= 8 && hour < 12) {
+          const t = (hour - 8) / 4;
+          skyColor.lerpColors(
+            new THREE.Color(0xa9a9a9),
+            new THREE.Color(0x87ceeb),
+            t
+          );
+          sunVisible = true;
+        } else if (hour >= 12 && hour < 16) {
+          skyColor.set(0x87ceeb);
+          sunVisible = true;
+        } else if (hour >= 16 && hour < 18) {
+          const t = (hour - 16) / 2;
+          skyColor.lerpColors(
+            new THREE.Color(0x87ceeb),
+            new THREE.Color(0x000033),
+            t
+          );
+          sunVisible = true;
+        } else {
+          skyColor.set(0x000033);
+          moonVisible = true;
+        }
+
+        sky.material.color = skyColor;
+        moon.visible = moonVisible;
+        sun.visible = sunVisible;
+
+        const moonRadius = 300;
+        const sunRadius = 400;
+
+        // Update moon position
+        const moonAngle = ((hour - 6) / 24) * 2 * Math.PI;
+        moon.position.x = moonRadius * Math.cos(moonAngle);
+        moon.position.y = Math.abs(200 * Math.sin(moonAngle)) + 50; // Ensure it stays above the floor
+        moon.position.z = 50;
+
+        // Update sun position
+        const sunAngle = ((hour + 6) / 24) * 2 * Math.PI; // Adjusted sunAngle calculation
+        sun.position.x = sunRadius * Math.cos(sunAngle);
+        sun.position.y = Math.abs(250 * Math.sin(sunAngle)) + 50; // Ensure it stays above the floor
+        sun.position.z = 50;
+
+        if (hour >= 18 || hour < 6) {
+          clouds.forEach((cloud) => (cloud.visible = false));
+        } else {
+          clouds.forEach((cloud) => (cloud.visible = true));
+        }
+      }
+
+      // Render the scene
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Move clouds
+        clouds.forEach((cloud) => {
+          cloud.position.x -= 0.05; // Adjust speed of clouds
+
+          // Reset cloud position if it goes too far
+          if (cloud.position.x < -500) {
+            cloud.position.x = 500;
+          }
+        });
+
+        // Update time of day
+        updateTimeOfDay();
+
+        renderer.render(scene, camera);
+      }
+
+      // Start rendering the scene
+      animate();
+
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
 </html>
