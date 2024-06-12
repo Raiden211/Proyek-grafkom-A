@@ -91,24 +91,6 @@
       });
 
       let mixer, truckMixer; // Declare the animation mixer variable
-
-      loader.load("low_poly_female/scene.gltf", function (gltf) {
-        const model = gltf.scene;
-        model.position.set(0, 0, -5);
-        model.scale.set(0.5, 0.4, 0.5);
-        scene.add(model);
-
-        // Initialize animation mixer
-        mixer = new THREE.AnimationMixer(model);
-
-        // Assuming your walking animation is named "walking"
-        const walkingAction = mixer.clipAction(
-          gltf.animations.find((animation) => animation.name === "walking")
-        );
-        walkingAction.play();
-
-        models.push(model);
-      });
       // Load the low-poly truck model with Car engine animation
       loader.load("low-poly_truck/scene.gltf", function (gltf) {
         const truck = gltf.scene;
@@ -126,6 +108,24 @@
         engineAction.play();
 
         models.push(truck);
+      });
+
+      loader.load("cartoon_dude_animated/scene.gltf", function (gltf) {
+        const model = gltf.scene;
+        model.position.set(0, 0, -5);
+        model.scale.set(1.5, 1.5, 1.5);
+        scene.add(model);
+
+        // Initialize animation mixer
+        mixer = new THREE.AnimationMixer(model);
+
+        // Assuming your walking animation is named "walking"
+        const walkingAction = mixer.clipAction(
+          gltf.animations.find((animation) => animation.name === "walking")
+        );
+        walkingAction.play();
+
+        models.push(model);
       });
 
       loader.load("apartment1/scene.gltf", function (gltf) {
@@ -673,7 +673,7 @@
 
         // Move the model forward
         if (models.length > 0) {
-          const model = models[0]; // Assuming the model is the first item in the models array
+          const model = models[8]; // Assuming the model is the first item in the models array
 
           if (forward && !sideway) {//1
             model.position.z += walkingSpeed;
