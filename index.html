@@ -56,11 +56,12 @@
       const uiPrompt = document.getElementById("ui-prompt");
       const messageBox = document.getElementById("message-box");
       // Position the camera
-      camera.position.z = 5;
+      camera.position.z = 18;
       camera.position.y = 1;
+      camera.position.x = -27;
 
       // Define a target position for the camera to look at
-      const lookAtTarget = new THREE.Vector3(0, 0, -10); // You can adjust the position as needed
+      const lookAtTarget = new THREE.Vector3(33, 0, -27); // You can adjust the position as needed
 
       // Update the camera's lookAt target
       camera.lookAt(lookAtTarget);
@@ -236,22 +237,38 @@
         );
       });
 
-      loader.load("urban_asset/scene.gltf", function (gltf) {
-        const urbanScene = gltf.scene;
-        console.log("GLTF scene loaded");
+      const trees = [];
 
-        urbanScene.traverse(function (child) {
-            if (child.isMesh) {
+const treePositions = [
+    [-38, 0, 17],
+    [-38, 0, 15],
+    [-38, 0, 19],
+    [-45, 0, 17],
+    [-45, 0, 15],
+    [-45, 0, 19],
+    [-38, 0, 25],
+    [-38, 0, 28],
+    [-38, 0, 31]
+];
+
+loader.load("urban_asset/scene.gltf", function (gltf) {
+    const urbanScene = gltf.scene;
+    console.log("GLTF scene loaded");
+
+    urbanScene.traverse(function (child) {
+        if (child.isMesh) {
             console.log(`Mesh found: ${child.name}`);
-            
+
             if (child.name.includes("Tree")) {
-                const tree = child.clone();
-                tree.position.set(-22, 0, 17);
-                tree.scale.set(0.5, 0.5, 0.5);
-                scene.add(tree);
-                tree.userData.boundingBox = new THREE.Box3().setFromObject(tree);
-                models.push(tree);
-                console.log(`Tree added at position: ${tree.position.toArray()}`);
+                treePositions.forEach((pos, index) => {
+                    const tree = child.clone();
+                    tree.position.set(pos[0], pos[1], pos[2]);
+                    tree.scale.set(0.5, 0.5, 0.5);
+                    scene.add(tree);
+                    tree.userData.boundingBox = new THREE.Box3().setFromObject(tree);
+                    trees.push(tree);
+                    console.log(`Tree ${index + 1} added at position: ${tree.position.toArray()}`);
+                });
             }
 
             if (child.name.includes("Main_Truck_1_Mat_0")) {
@@ -263,9 +280,59 @@
                 models.push(car);
                 console.log(`Car added at position: ${car.position.toArray()}`);
             }
+
+            if (child.name == "Barrier_Mat_0") {
+                const car = child.clone();
+                car.position.set(-7, 0, 22);
+                car.scale.set(0.5, 0.5, 0.5);
+                scene.add(car);
+                car.userData.boundingBox = new THREE.Box3().setFromObject(car);
+                models.push(car);
+                console.log(`Car added at position: ${car.position.toArray()}`);
             }
-        });
-        });
+
+            if (child.name == "Barrier_Mat_0") {
+                const car = child.clone();
+                car.position.set(-37, 0, 22);
+                car.scale.set(0.5, 0.5, 0.5);
+                scene.add(car);
+                car.userData.boundingBox = new THREE.Box3().setFromObject(car);
+                models.push(car);
+                console.log(`Car added at position: ${car.position.toArray()}`);
+            }
+
+            if (child.name.includes("Car_2_1_Mat_0")) {
+                const car = child.clone();
+                car.position.set(-22, 0, 27);
+                car.scale.set(0.5, 0.5, 0.5);
+                scene.add(car);
+                car.userData.boundingBox = new THREE.Box3().setFromObject(car);
+                models.push(car);
+                console.log(`Car added at position: ${car.position.toArray()}`);
+            }
+
+            if (child.name.includes("Car_1_3_Mat_0")) {
+                const car = child.clone();
+                car.position.set(-22, 0, 24);
+                car.scale.set(0.5, 0.5, 0.5);
+                scene.add(car);
+                car.userData.boundingBox = new THREE.Box3().setFromObject(car);
+                models.push(car);
+                console.log(`Car added at position: ${car.position.toArray()}`);
+            }
+
+            if (child.name.includes("Car_2_2_Mat_0")) {
+                const car = child.clone();
+                car.position.set(-22, 0, 19);
+                car.scale.set(0.5, 0.5, 0.5);
+                scene.add(car);
+                car.userData.boundingBox = new THREE.Box3().setFromObject(car);
+                models.push(car);
+                console.log(`Car added at position: ${car.position.toArray()}`);
+            }
+        }
+    });
+});
 
       let helicopter;
       let helicopterMixer;
@@ -301,43 +368,6 @@
 
         // Add the mixer to an array of mixers if you have multiple animations
         mixers.push(helicopterMixer);
-      });
-
-      let parkGateMixer;
-      loader.load("low_poly_vehicle_barrier/scene.gltf", function (gltf) {
-        const urbanScene = gltf.scene;
-        urbanScene.traverse(function (child) {
-          if (child.isMesh) {
-            const park_gate = child.clone();
-            park_gate.position.set(-20, 2, 20); // Adjust position as needed
-            park_gate.scale.set(1.3, 1.3, 1.3); // Use a small positive scale
-            scene.add(park_gate);
-
-            // Initialize animation mixer for the park gate
-            parkGateMixer = new THREE.AnimationMixer(park_gate);
-
-            // Assuming your barrier animations are named "Open" and "Close"
-            const openAction = parkGateMixer.clipAction(
-              gltf.animations.find((animation) => animation.name === "Open")
-            );
-            const closeAction = parkGateMixer.clipAction(
-              gltf.animations.find((animation) => animation.name === "Close")
-            );
-
-            // Compute the bounding box for the park gate
-            park_gate.userData.boundingBox = new THREE.Box3().setFromObject(
-              park_gate
-            );
-            models.push(park_gate);
-
-            // Initially, the barrier is closed
-            closeAction.play();
-
-            // Store the actions in the userData for easy access
-            park_gate.userData.openAction = openAction;
-            park_gate.userData.closeAction = closeAction;
-          }
-        });
       });
 
       // Create the floor
@@ -836,30 +866,30 @@
         const distanceToTruck = camera.position.distanceTo(truckModel.position);
 
         if (distanceToTruck < 5 && !isInThirdPersonView) {
-          // Switch to third-person view
-          camera.position.set(
-            truckModel.position.x,
-            truckModel.position.y + 5,
-            truckModel.position.z - 10
-          ); // Adjust camera position behind the truck
-          camera.lookAt(truckModel.position); // Look at the truck
-          isInThirdPersonView = true;
-          if (engineAction) {
-            engineAction.play(); // Play the car engine animation if it exists
-          }
-        } else if (isInThirdPersonView) {
-          // Switch back to first-person view
-          camera.position.set(
-            truckModel.position.x,
-            truckModel.position.y + 1.5,
-            truckModel.position.z - 0.5
-          ); // Adjust camera position behind the truck
-          camera.lookAt(lookAtTarget); // Look at the target position
-          isInThirdPersonView = false;
-          if (engineAction) {
-            engineAction.stop(); // Stop the car engine animation if it exists
-          }
-        }
+    // Switch to third-person view
+    camera.position.set(
+      truckModel.position.x,
+      truckModel.position.y + 5,    // Raise the camera 5 units above the truck
+      truckModel.position.z - 10    // Position the camera 10 units behind the truck
+    );
+    camera.lookAt(truckModel.position); // Ensure the camera looks at the truck
+    isInThirdPersonView = true;
+    if (engineAction) {
+      engineAction.play(); // Play the car engine animation if it exists
+    }
+  } else if (isInThirdPersonView) {
+    // Switch back to first-person view
+    camera.position.set(
+      truckModel.position.x,
+      truckModel.position.y + 1.5,  // Slightly raise the camera to the height of a driver's perspective
+      truckModel.position.z - 0.5   // Position the camera very close to the truck for first-person view
+    );
+    camera.lookAt(lookAtTarget); // Look at the target position
+    isInThirdPersonView = false;
+    if (engineAction) {
+      engineAction.stop(); // Stop the car engine animation if it exists
+    }
+  }
       }
 
       const mixers = [];
@@ -904,35 +934,6 @@
 
           // Pastikan rotasi helikopter sesuai dengan orientasi yang diinginkan
           helicopter.rotateY(Math.PI / 2); // Sesuaikan rotasi jika diperlukan
-        }
-
-        if (parkGateMixer) {
-          parkGateMixer.update(clock.getDelta());
-          // Check the distance between the camera and the park gate
-          const parkGate = models.find(
-            (model) =>
-              model.position.x === -20 &&
-              model.position.y === 2 &&
-              model.position.z === 17
-          );
-          if (parkGate) {
-            const distance = camera.position.distanceTo(parkGate.position);
-            const openAction = parkGate.userData.openAction;
-            const closeAction = parkGate.userData.closeAction;
-            if (distance < 5) {
-              // If the camera is within 5 units, raise the barrier
-              if (!openAction.isRunning()) {
-                closeAction.stop();
-                openAction.play();
-              }
-            } else {
-              // If the camera is farther than 5 units, lower the barrier
-              if (!closeAction.isRunning()) {
-                openAction.stop();
-                closeAction.play();
-              }
-            }
-          }
         }
 
         // Move the model forward
