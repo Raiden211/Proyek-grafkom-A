@@ -619,24 +619,45 @@
       }
 
       function moveCharacter() {
-        let prevPosition = camera.position.clone();
+        if (!isInThirdPersonView) {
+          let prevPosition = camera.position.clone();
 
-        if (keysPressed["W"]) {
-          controls.moveForward(moveDistance);
-        }
-        if (keysPressed["A"]) {
-          controls.moveRight(-moveDistance);
-        }
-        if (keysPressed["S"]) {
-          controls.moveForward(-moveDistance);
-        }
-        if (keysPressed["D"]) {
-          controls.moveRight(moveDistance);
-        }
-        if (keysPressed[" "] && !isJumping) {
-          // Space key for jumping
-          isJumping = true;
-          jump();
+          if (keysPressed["W"]) {
+            controls.moveForward(moveDistance);
+          }
+          if (keysPressed["A"]) {
+            controls.moveRight(-moveDistance);
+          }
+          if (keysPressed["S"]) {
+            controls.moveForward(-moveDistance);
+          }
+          if (keysPressed["D"]) {
+            controls.moveRight(moveDistance);
+          }
+          if (keysPressed[" "] && !isJumping) {
+            // Space key for jumping
+            isJumping = true;
+            jump();
+          }
+        } else {
+          let prevPosition = truck.position.clone();
+
+          if (keysPressed["W"]) {
+            controls.moveForward(moveDistance);
+            truck.position.z += moveDistance;
+          }
+          if (keysPressed["A"]) {
+            controls.moveRight(-moveDistance);
+            truck.position.x += moveDistance;
+          }
+          if (keysPressed["S"]) {
+            controls.moveForward(-moveDistance);
+            truck.position.z -= moveDistance;
+          }
+          if (keysPressed["D"]) {
+            controls.moveRight(moveDistance);
+            truck.position.x -= moveDistance;
+          }
         }
 
         // Create player's bounding box
