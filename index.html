@@ -619,8 +619,10 @@
       }
 
       function moveCharacter() {
+        let prevPosition, prevTruckPosition;
+
         if (!isInThirdPersonView) {
-          let prevPosition = camera.position.clone();
+          prevPosition = camera.position.clone();
 
           if (keysPressed["W"]) {
             controls.moveForward(moveDistance);
@@ -640,24 +642,27 @@
             jump();
           }
         } else {
-          let prevPosition = truck.position.clone();
+          prevTruckPosition = truck.position.clone();
 
           if (keysPressed["W"]) {
-            controls.moveForward(moveDistance);
-            truck.position.z += moveDistance;
+            truck.translateZ(-moveDistance);
           }
           if (keysPressed["A"]) {
-            controls.moveRight(-moveDistance);
-            truck.position.x += moveDistance;
+            truck.translateX(-moveDistance);
           }
           if (keysPressed["S"]) {
-            controls.moveForward(-moveDistance);
-            truck.position.z -= moveDistance;
+            truck.translateZ(moveDistance);
           }
           if (keysPressed["D"]) {
-            controls.moveRight(moveDistance);
-            truck.position.x -= moveDistance;
+            truck.translateX(moveDistance);
           }
+
+          // Adjust the camera position to follow the truck smoothly
+          const cameraOffset = new THREE.Vector3(0, 5, -15).applyQuaternion(
+            truck.quaternion
+          );
+          camera.position.copy(truck.position.clone().add(cameraOffset));
+          camera.lookAt(truck.position);
         }
 
         // Create player's bounding box
@@ -667,22 +672,37 @@
         );
 
         // Check for collisions with models
+        let collisionDetected = false;
         models.forEach((model) => {
           if (
             model.userData.boundingBox &&
             playerBox.intersectsBox(model.userData.boundingBox)
           ) {
-            camera.position.copy(prevPosition); // Revert to previous position on collision
+            collisionDetected = true;
+            if (!isInThirdPersonView) {
+              camera.position.copy(prevPosition); // Revert to previous position on collision
+            } else {
+              truck.position.copy(prevTruckPosition); // Revert to previous position on collision
+            }
           }
         });
 
         // Check for collisions with the street lights
         streetLights.forEach(({ boundingBox }) => {
           if (playerBox.intersectsBox(boundingBox)) {
-            // Revert to previous position on collision
-            camera.position.copy(prevPosition);
+            collisionDetected = true;
+            if (!isInThirdPersonView) {
+              camera.position.copy(prevPosition); // Revert to previous position on collision
+            } else {
+              truck.position.copy(prevTruckPosition); // Revert to previous position on collision
+            }
           }
         });
+
+        // Reset keysPressed if collision detected
+        if (collisionDetected) {
+          Object.keys(keysPressed).forEach((key) => (keysPressed[key] = false));
+        }
 
         requestAnimationFrame(moveCharacter);
       }
