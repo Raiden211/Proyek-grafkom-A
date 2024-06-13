@@ -78,7 +78,7 @@
       const loader = new THREE.GLTFLoader();
       const models = [];
 
-      loader.load("kotak_listrik/scene.gltf", function (gltf) {
+      loader.load("../kotak_listrik/scene.gltf", function (gltf) {
         const model = gltf.scene;
         model.position.set(-6, 0, -5);
 
@@ -92,7 +92,7 @@
         models.push(model);
       });
 
-      loader.load("low_poly_male/scene.gltf", function (gltf) {
+      loader.load("../low_poly_male/scene.gltf", function (gltf) {
         const model = gltf.scene;
         model.position.set(0, 0, -5);
         model.scale.set(0.5, 0.4, 0.5);
@@ -111,7 +111,7 @@
       });
 
       let mixer, truckMixer; // Declare the animation mixer variable
-      loader.load("low-poly_truck/scene.gltf", function (gltf) {
+      loader.load("../low-poly_truck/scene.gltf", function (gltf) {
         truck = gltf.scene;
         truck.position.set(0, 0.5, -10); // Adjust the position as needed
         truck.scale.set(0.01, 0.01, 0.01); // Adjust the scale as needed
@@ -133,7 +133,7 @@
         models.push(truck);
       });
 
-      loader.load("apartment1/scene.gltf", function (gltf) {
+      loader.load("../apartment1/scene.gltf", function (gltf) {
         const newModel = gltf.scene;
         newModel.scale.set(0.01, 0.01, 0.01); // Adjusted scale
 
@@ -184,7 +184,7 @@
 
       streetLightPositions.forEach((pos, index) => {
         streetLightLoader.load(
-          "street_light/scene.gltf",
+          "../street_light/scene.gltf",
           function (gltf) {
             const light = gltf.scene;
             light.scale.set(
@@ -238,7 +238,7 @@
         [-38, 0, 31],
       ];
 
-      loader.load("urban_asset/scene.gltf", function (gltf) {
+      loader.load("../urban_asset/scene.gltf", function (gltf) {
         const urbanScene = gltf.scene;
         console.log("GLTF scene loaded");
 
@@ -331,7 +331,7 @@
       let helicopterMixer;
       let angle = 0;
 
-      loader.load("low_poly_helicopter/scene.gltf", function (gltf) {
+      loader.load("../low_poly_helicopter/scene.gltf", function (gltf) {
         helicopter = gltf.scene;
         helicopter.position.set(-22, 40, 22); // Set initial position
         helicopter.scale.set(1, 1, 1); // Normal size
